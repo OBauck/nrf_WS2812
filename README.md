@@ -1,0 +1,1 @@
+nRF52 project using PWM peripheral to control WS2812 LEDs
