@@ -42,7 +42,6 @@ static nrf_pwm_sequence_t const m_seq =
 //total ram usage (in bytes) is approximately 3*NR_OF_PIXELS + 24*NUMBER_OF_PIXELS*2 + (RESET_ZEROS_AT_START+1)*2 = NR_OF_PIXELS * 51 + 84
 
 static nrf_drv_WS2812_pixel_t pixels[NR_OF_PIXELS];
-//static uint16_t WS2812_pwm_seq[NR_OF_PIXELS * 24 + RESET_ZEROS_AT_START + 1];
 
 void nrf_drv_WS2812_init(uint8_t pin)
 {
@@ -72,32 +71,17 @@ void nrf_drv_WS2812_init(uint8_t pin)
     
     for(int i = 0; i < NRF_PWM_VALUES_LENGTH(m_seq_values); i++)
     {
-        m_seq_values[i] = 0x8000;
+        m_seq_values[i] = ONE_HIGH_TICKS;
     }
-    
-    /*
-    NRF_PWM0->PSEL.OUT[0] = (pin << PWM_PSEL_OUT_PIN_Pos) | 
-                            (PWM_PSEL_OUT_CONNECT_Connected <<
-                                                     PWM_PSEL_OUT_CONNECT_Pos);
-    
-    NRF_PWM0->ENABLE      = (PWM_ENABLE_ENABLE_Enabled << PWM_ENABLE_ENABLE_Pos);
-    NRF_PWM0->MODE        = (PWM_MODE_UPDOWN_Up << PWM_MODE_UPDOWN_Pos);
-    NRF_PWM0->PRESCALER   = (PWM_PRESCALER_PRESCALER_DIV_1 << PWM_PRESCALER_PRESCALER_Pos);
-    
-    NRF_PWM0->COUNTERTOP  = (PERIOD_TICKS << PWM_COUNTERTOP_COUNTERTOP_Pos); //1.25 usec
-    NRF_PWM0->LOOP        = (1 << PWM_LOOP_CNT_Pos);
-    NRF_PWM0->DECODER   = (PWM_DECODER_LOAD_Common << PWM_DECODER_LOAD_Pos) | 
-                          (PWM_DECODER_MODE_RefreshCount << PWM_DECODER_MODE_Pos);
-    
-    NRF_PWM0->SEQ[1].PTR  = ((uint32_t)(WS2812_pwm_seq) << PWM_SEQ_PTR_PTR_Pos);
-    NRF_PWM0->SEQ[1].CNT  = ((sizeof(WS2812_pwm_seq) / sizeof(uint16_t)) << PWM_SEQ_CNT_CNT_Pos);
-    NRF_PWM0->SEQ[1].REFRESH  = 0; 
-
-    for(int i = 0; i < sizeof(WS2812_pwm_seq)/sizeof(uint16_t); i++)
-    {
-        WS2812_pwm_seq[i] = 0x8000;
-    }
-    */
+		
+	for(int i = 0; i < RESET_ZEROS_AT_START; i++)
+	{
+		m_seq_values[i] = 0x8000;
+	}
+	
+	m_seq_values[NR_OF_PIXELS * 24 + RESET_ZEROS_AT_START] = 0x8000;
+	
+	nrf_drv_pwm_simple_playback(&m_pwm0, &m_seq, 1, 0);
 }
 
 void nrf_drv_WS2812_set_pixel(uint8_t pixel, uint8_t red, uint8_t green, uint8_t blue)
